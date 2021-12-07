@@ -26,17 +26,15 @@ def readfile(filename):
         npts = len(file[0])
         return(x, y, xmin, xmax, npts, filename)
 
-def redshift(lambdar, vel):
+def rWavelength(x, vel):
     ''' Corrects for systemic velocity.
-    Input: observed wavelengths and velocity (in km/s).
-    Returns: corrected wavelengths.
+    Input: Observed wavelength (number) and velocity in km/s.
+    Output: Corrected wavelengh (number).
     '''
-    lambda0 = []
     c = 299792458
     z = vel / c
-    for i in range(len(lambdar)):
-        lambda0.append(lambdar[i] / (1 + z))
-    return(lambda0)
+    newW = x / (1 + z)
+    return newW
 
 def interp(x, y):
     ''' Interpolates a function fitting a spline y = spl(x).
@@ -130,33 +128,33 @@ standInterp = interp(standx,standy)
 contInterp = interp(contx,conty)
 
 # Plotting the data and interpolations
-plt.figure()
-plt.subplot(121)
-linexNew = np.arange(xlmin,xlmax,0.1)
-lineyNew = lineInterp(linexNew)
-plt.plot(linex, liney, 'o')
-plt.plot(linexNew, lineyNew)
-plt.title('Interpolation for line filter')
-plt.ylabel('Transmission (%)')
-plt.xlabel(r'Wavelength ($\AA$)')
-plt.subplot(122)
-contxNew = np.arange(xcmin,xcmax,0.1)
-contyNew = contInterp(contxNew)
-plt.plot(contx, conty, 'o')
-plt.plot(contxNew, contyNew)
-plt.title('Interpolation for continuum filter')
-plt.ylabel('Transmission (%)')
-plt.xlabel(r'Wavelength ($\AA$)')
-plt.subplots_adjust(top = 0.7,bottom = 0.3,left = 0.10,hspace = 0.9,wspace = 0.5)
-plt.show()
-standxNew = np.arange(xmin,xmax,0.1)
-standyNew = standInterp(standxNew)
-plt.plot(standx, standy, 'o')
-plt.plot(standxNew, standyNew)
-plt.title('Interpolation for standard')
-plt.ylabel(r'Flux ($erg/s/cm^2/\AA$)')
-plt.xlabel(r'Wavelength ($\AA$)')
-plt.show()
+#plt.figure()
+#plt.subplot(121)
+#linexNew = np.arange(xlmin,xlmax,0.1)
+#lineyNew = lineInterp(linexNew)
+#plt.plot(linex, liney, 'o')
+#plt.plot(linexNew, lineyNew)
+#plt.title('Interpolation for line filter')
+#plt.ylabel('Transmission (%)')
+#plt.xlabel(r'Wavelength ($\AA$)')
+#plt.subplot(122)
+#contxNew = np.arange(xcmin,xcmax,0.1)
+#contyNew = contInterp(contxNew)
+#plt.plot(contx, conty, 'o')
+#plt.plot(contxNew, contyNew)
+#plt.title('Interpolation for continuum filter')
+#plt.ylabel('Transmission (%)')
+#plt.xlabel(r'Wavelength ($\AA$)')
+#plt.subplots_adjust(top = 0.7,bottom = 0.3,left = 0.10,hspace = 0.9,wspace = 0.5)
+#plt.show()
+#standxNew = np.arange(xmin,xmax,0.1)
+#standyNew = standInterp(standxNew)
+#plt.plot(standx, standy, 'o')
+#plt.plot(standxNew, standyNew)
+#plt.title('Interpolation for standard')
+#plt.ylabel(r'Flux ($erg/s/cm^2/\AA$)')
+#plt.xlabel(r'Wavelength ($\AA$)')
+#plt.show()
 
 # Continuum filter integration
 contInt = integral(contInterp,xcmin,xcmax)
@@ -175,26 +173,24 @@ contFluxInt = integrate.quad(auxContFunc,xcmin,xcmax,epsabs=1.49e-11)
 auxLineFunc = lambda x: lineInterp(x) * standInterp(x)
 lineFluxInt = integrate.quad(auxLineFunc,xlmin,xlmax,epsabs=1.49e-11)
 
-# P, Q, and R:
+# Q
 factorQ = 10 ** ( 0.4 * ( kpc * ( Xc - Xsc ) ) )
-Q = (factorQ / fsc) * (contFluxInt[0] / lineFluxInt[0]) * (lineInt / contInt)
+Q = (factorQ / fsc) * (contFluxInt[0] / 1) * (lineInt / contInt) # changed
+# lineFluxInt[0] to 1
 print('Q =', Q)
 
+# P
 factorP = 10 ** ( 0.4 * ( kpl * ( Xl - Xsl ) ) )
 P = (factorP / fsl) * lineFluxInt[0]
 print('P =', P)
 
+# R
 fwhm = 1
-l0 = redshift(linex, vsys)
 g = fwhm / (2 * np.sqrt(np.log(2)))
 factorR = 1 / ( np.sqrt( np.pi * g ) )
-def fx(x):
-    for i in range(len(l0)):
-        fxx = ( np.exp( -( (x - l0[i])/g )**2 ) )
-    return fxx
-funcR = lambda x: lineInterp(x) * fx(x)
-RInt = integrate.quad(funcR,xlmin,xlmax,epsabs=1.49e-11)
-R = factorR * RInt[0]
+funcR = lambda x: lineInterp(x) * np.exp( - ( ( x - rWavelength(x,vsys) )/g )**2 )
+RInt = integrate.romberg(funcR,xlmin,xlmax)
+R = factorR * RInt
 print('R =', R,'\n')
 
 alpha = P / ( R * texpl )
