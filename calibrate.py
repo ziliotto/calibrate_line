@@ -175,8 +175,7 @@ lineFluxInt = integrate.quad(auxLineFunc,xlmin,xlmax,epsabs=1.49e-11)
 
 # Q
 factorQ = 10 ** ( 0.4 * ( kpc * ( Xc - Xsc ) ) )
-Q = (factorQ / fsc) * (contFluxInt[0] / 1) * (lineInt / contInt) # changed
-# lineFluxInt[0] to 1
+Q = (factorQ / fsc) * (contFluxInt[0] / 1) * (lineInt / contInt) # lineFluxInt[0] = 1 to match Bryan's code
 print('Q =', Q)
 
 # P
@@ -187,10 +186,10 @@ print('P =', P)
 # R
 fwhm = 1
 g = fwhm / (2 * np.sqrt(np.log(2)))
-factorR = 1 / ( np.sqrt( np.pi * g ) )
-funcR = lambda x: lineInterp(x) * np.exp( - ( ( x - rWavelength(x,vsys) )/g )**2 )
-RInt = integrate.romberg(funcR,xlmin,xlmax)
-R = factorR * RInt
+cte = 1 / ( np.sqrt( np.pi ) * g )
+funcR = lambda x: lineInterp(x) * np.exp( - ( ( x - rWavelength(x,vsys) )/g )**2 ) * cte
+intR = integrate.fixed_quad(funcR,xlmin,xlmax)
+R = intR[0]
 print('R =', R,'\n')
 
 alpha = P / ( R * texpl )
