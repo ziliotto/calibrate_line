@@ -31,7 +31,7 @@ def rWavelength(x, vel):
     Input: Observed wavelength (number) and velocity in km/s.
     Output: Corrected wavelengh (number).
     '''
-    c = 299792458
+    c = 299792.458
     z = vel / c
     newW = x / (1 + z)
     return newW
@@ -196,4 +196,4 @@ alpha = P / ( R * texpl )
 beta = Q * texpl / ( P * texpc )
 gamma = -skyl + ( skyc * texpl * Q  / ( texpc * P ) )
 
-print('F = ', alpha, '(I(line) -', beta, 'I(continuum) +', gamma)
+print('F = ', alpha, '(I(line) -', beta, 'I(continuum) +', gamma,')')
