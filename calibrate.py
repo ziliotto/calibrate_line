@@ -187,8 +187,8 @@ print('P =', P)
 fwhm = 1
 g = fwhm / (2 * np.sqrt(np.log(2)))
 cte = 1 / ( np.sqrt( np.pi ) * g )
-funcR = lambda x: lineInterp(x) * np.exp( - ( ( x - rWavelength(x,vsys) )/g )**2 ) * cte
-intR = integrate.quadrature(funcR,xlmin,xlmax)
+funcR = lambda x: lineInterp(x) * np.exp( - ( ( x - rWavelength(6563,vsys) )/g )**2 ) * cte
+intR = integrate.quad(funcR,xlmin,xlmax)
 R = intR[0]
 print('R =', R,'\n')
 
