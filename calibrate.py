@@ -26,15 +26,15 @@ def readfile(filename):
         npts = len(file[0])
         return(x, y, xmin, xmax, npts, filename)
 
-def rWavelength(x, vel):
+def obsWavelength(x, vel):
     ''' Corrects for systemic velocity.
-    Input: Observed wavelength (number) and velocity in km/s.
-    Output: Corrected wavelengh (number).
+    Input: Rest wavelength and velocity in km/s.
+    Output: Observed wavelengh.
     '''
     c = 299792.458
     z = vel / c
-    newW = x / (1 + z)
-    return newW
+    lambda0 = x * (1 + z)
+    return lambda0
 
 def interp(x, y):
     ''' Interpolates a function fitting a spline y = spl(x).
@@ -175,7 +175,7 @@ lineFluxInt = integrate.quad(auxLineFunc,xlmin,xlmax,epsabs=1.49e-11)
 
 # Q
 factorQ = 10 ** ( 0.4 * ( kpc * ( Xc - Xsc ) ) )
-Q = (factorQ / fsc) * (contFluxInt[0] / 1) * (lineInt / contInt) # lineFluxInt[0] = 1 to match Bryan's code
+Q = (factorQ / fsc) * contFluxInt[0] * (lineInt / contInt)
 print('Q =', Q)
 
 # P
@@ -187,7 +187,7 @@ print('P =', P)
 fwhm = 1
 g = fwhm / (2 * np.sqrt(np.log(2)))
 cte = 1 / ( np.sqrt( np.pi ) * g )
-funcR = lambda x: lineInterp(x) * np.exp( - ( ( x - rWavelength(6563,vsys) )/g )**2 ) * cte
+funcR = lambda x: lineInterp(x) * np.exp(-(( x - obsWavelength(6563,vsys))/g )**2) * cte
 intR = integrate.quad(funcR,xlmin,xlmax)
 R = intR[0]
 print('R =', R,'\n')
