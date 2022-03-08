@@ -165,21 +165,21 @@ if __name__ == "__main__":
     #plt.show()
 
     # Continuum filter integration
-    contInt = integral(contInterp,xcmin,xcmax)
+    contInt = integral(contInterp, xcmin, xcmax)
 
     # Line filter integration
-    lineInt = integral(lineInterp,xlmin,xlmax)
+    lineInt = integral(lineInterp, xlmin, xlmax)
 
     # Standard flux file integration
-    standInt = integral(standInterp,xmin,xmax)
+    standInt = integral(standInterp, xmin, xmax)
 
     # Integration of continuum filter * standard flux
     auxContFunc = lambda x: contInterp(x) * standInterp(x)
-    contFluxInt = integrate.quad(auxContFunc,xcmin,xcmax,epsabs=1.49e-11)
+    contFluxInt = integrate.quad(auxContFunc, xcmin, xcmax, epsabs=1.49e-11)
 
     # Integration of line filter * standard flux
     auxLineFunc = lambda x: lineInterp(x) * standInterp(x)
-    lineFluxInt = integrate.quad(auxLineFunc,xlmin,xlmax,epsabs=1.49e-11)
+    lineFluxInt = integrate.quad(auxLineFunc, xlmin, xlmax, epsabs=1.49e-11)
 
     # Q
     factorQ = 10 ** ( 0.4 * ( kpc * ( Xc - Xsc ) ) )
@@ -197,12 +197,12 @@ if __name__ == "__main__":
     cte = 1. / ( np.sqrt( np.pi ) * g )
     waveobs = obsWavelength(6563., vsys)
     funcR = lambda x: lineInterp(x) * np.exp(-(( x - waveobs )/g )**2)
-    intR = integrate.quad(funcR,xlmin,xlmax)
+    intR = integrate.quad(funcR, xlmin, xlmax)
     R = intR[0] * cte
     print('R =', R,'\n')
 
     alpha = P / ( R * texpl )
     beta = Q * texpl / ( P * texpc )
-    gamma = -skyl + ( skyc * texpl * Q  / ( texpc * P ) )
+    gamma = -skyl + ( skyc * texpl * Q / ( texpc * P ) )
 
     print('F = ', alpha, '(I(line) -', beta, 'I(continuum) +', gamma,')')
