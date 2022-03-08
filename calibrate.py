@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from scipy import integrate
 from scipy.interpolate import InterpolatedUnivariateSpline
 
+
 def readfile(filename):
     ''' Reads a file.
     Input: Filename.
@@ -26,6 +27,7 @@ def readfile(filename):
         npts = len(file[0])
         return(x, y, xmin, xmax, npts, filename)
 
+
 def obsWavelength(x, vel):
     ''' Corrects for systemic velocity.
     Input: Rest wavelength and velocity in km/s.
@@ -33,8 +35,9 @@ def obsWavelength(x, vel):
     '''
     c = 299792.458
     z = vel / c
-    lambda0 = x * (1 + z)
-    return lambda0
+    lambda_obs = x * (1 + z)
+    return lambda_obs
+
 
 def interp(x, y):
     ''' Interpolates a function fitting a spline y = spl(x).
@@ -42,7 +45,8 @@ def interp(x, y):
     Output: Interpolated function.
     '''
     f = InterpolatedUnivariateSpline(x, y)
-    return(f)
+    return f
+
 
 def integral(func, a, b):
     ''' Method of InterpolatedUnivariateSpline to calculate the integral of the interpolated function.
@@ -52,148 +56,153 @@ def integral(func, a, b):
     I = func.integral(a, b)
     return I
 
-# Data input
-Xl = 1.38
-print('Line filter air masses (program objects):', Xl)
 
-Xsl = 1.50
-print('Line filter air masses (standard objects):', Xsl)
+if __name__ == "__main__":
+    # Data input
+    Xl = 1.38
+    print('Line filter air masses (program objects):', Xl)
 
-Xc = 1.34
-print('Air masses for the continuum filter (program):', Xc)
+    Xsl = 1.50
+    print('Line filter air masses (standard objects):', Xsl)
 
-Xsc = 1.54
-print('Air masses for the continuum filter (standard):', Xsc)
+    Xc = 1.34
+    print('Air masses for the continuum filter (program):', Xc)
 
-kpl = 0.14
-print('mag/air mass for line:', kpl)
+    Xsc = 1.54
+    print('Air masses for the continuum filter (standard):', Xsc)
 
-kpc = 0.23
-print('mag/air mass for continuum:', kpc)
+    kpl = 0.14
+    print('mag/air mass for line:', kpl)
 
-fsl = 294.3
-print('Raw fluxes of the standard with sky subtracted (line):', fsl)
+    kpc = 0.23
+    print('mag/air mass for continuum:', kpc)
 
-fsc = 2565.5
-print('Raw fluxes of the standard with sky subtracted (continuum):', fsc)
+    fsl = 294.3
+    print('Raw fluxes of the standard with sky subtracted (line):', fsl)
 
-nline = 1
-print('Number of lines found in the line filter range, its rest wavelengths and fractional contribution (sum=1.0):', nline)
+    fsc = 2565.5
+    print('Raw fluxes of the standard with sky subtracted (continuum):', fsc)
 
-rfWave = [6563,1]
-print('Rest wavelength (Angstroms) of each line as well as its fractional contibution (sum = 1.0):', rfWave)
+    nline = 1
+    print('Number of lines found in the line filter range, its rest wavelengths and fractional contribution (sum=1.0):', nline)
 
-vsys = 45
-print('Systemic velocity of the galaxy:', vsys)
+    rfWave = [6563,1]
+    print('Rest wavelength (Angstroms) of each line as well as its fractional contibution (sum = 1.0):', rfWave)
 
-texpl = 2400
-print('Exposure times of program frames (line):', texpl)
+    vsys = 45
+    print('Systemic velocity of the galaxy:', vsys)
 
-texpc = 600
-print('Exposure times of program frames (continuum):', texpc)
+    texpl = 2400
+    print('Exposure times of program frames (line):', texpl)
 
-skyl = 67.9
-print('Sky background of the program frames in counts/pixel (line):', skyl)
+    texpc = 600
+    print('Exposure times of program frames (continuum):', texpc)
 
-skyc = 123.8
-print('Sky background of the program frames in counts/pixel (continuum):', skyc)
+    skyl = 67.9
+    print('Sky background of the program frames in counts/pixel (line):', skyl)
 
-# Line file
-line = readfile('/Users/tuilaziliotto/Documents/GitHub/calibrate_line/6568.dat')
-print('Line filter file:', line[5])
-linex = line[0]
-liney = line[1]
-xlmax = line[3]
-xlmin = line[2]
+    skyc = 123.8
+    print('Sky background of the program frames in counts/pixel (continuum):', skyc)
 
-# Continuum file
-continuum = readfile('/Users/tuilaziliotto/Documents/GitHub/calibrate_line/6092.dat')
-print('Continuum filter file:', continuum[5])
-xcmax = continuum[3]
-xcmin = continuum[2]
-contx = continuum[0]
-conty = continuum[1]
+    # Line file
+    path = '/Users/bmiller/src/calibrate'
+    # path = '/Users/tuilaziliotto/Documents/GitHub/calibrate_line/''
+    line = readfile(os.path.join(path, '6568.dat'))
+    print('Line filter file:', line[5])
+    linex = line[0]
+    liney = line[1]
+    xlmax = line[3]
+    xlmin = line[2]
 
-# Standard file
-standard = readfile('/Users/tuilaziliotto/Documents/GitHub/calibrate_line/f34f.dat')
-print('Standard flux file:', standard[5],'\n')
-standx = standard[0]
-standy = standard[1]
-xmin = standard[2]
-xmax = standard[3]
+    # Continuum file
+    continuum = readfile(os.path.join(path, '6092.dat'))
+    print('Continuum filter file:', continuum[5])
+    xcmax = continuum[3]
+    xcmin = continuum[2]
+    contx = continuum[0]
+    conty = continuum[1]
 
-# Interpolations
-lineInterp = interp(linex,liney)
-standInterp = interp(standx,standy)
-contInterp = interp(contx,conty)
+    # Standard file
+    standard = readfile(os.path.join(path, 'f34f.dat'))
+    print('Standard flux file:', standard[5],'\n')
+    standx = standard[0]
+    standy = standard[1]
+    xmin = standard[2]
+    xmax = standard[3]
 
-# Plotting the data and interpolations
-#plt.figure()
-#plt.subplot(121)
-#linexNew = np.arange(xlmin,xlmax,0.1)
-#lineyNew = lineInterp(linexNew)
-#plt.plot(linex, liney, 'o')
-#plt.plot(linexNew, lineyNew)
-#plt.title('Interpolation for line filter')
-#plt.ylabel('Transmission (%)')
-#plt.xlabel(r'Wavelength ($\AA$)')
-#plt.subplot(122)
-#contxNew = np.arange(xcmin,xcmax,0.1)
-#contyNew = contInterp(contxNew)
-#plt.plot(contx, conty, 'o')
-#plt.plot(contxNew, contyNew)
-#plt.title('Interpolation for continuum filter')
-#plt.ylabel('Transmission (%)')
-#plt.xlabel(r'Wavelength ($\AA$)')
-#plt.subplots_adjust(top = 0.7,bottom = 0.3,left = 0.10,hspace = 0.9,wspace = 0.5)
-#plt.show()
-#standxNew = np.arange(xmin,xmax,0.1)
-#standyNew = standInterp(standxNew)
-#plt.plot(standx, standy, 'o')
-#plt.plot(standxNew, standyNew)
-#plt.title('Interpolation for standard')
-#plt.ylabel(r'Flux ($erg/s/cm^2/\AA$)')
-#plt.xlabel(r'Wavelength ($\AA$)')
-#plt.show()
+    # Interpolations
+    lineInterp = interp(linex,liney)
+    standInterp = interp(standx,standy)
+    contInterp = interp(contx,conty)
 
-# Continuum filter integration
-contInt = integral(contInterp,xcmin,xcmax)
+    # Plotting the data and interpolations
+    #plt.figure()
+    #plt.subplot(121)
+    #linexNew = np.arange(xlmin,xlmax,0.1)
+    #lineyNew = lineInterp(linexNew)
+    #plt.plot(linex, liney, 'o')
+    #plt.plot(linexNew, lineyNew)
+    #plt.title('Interpolation for line filter')
+    #plt.ylabel('Transmission (%)')
+    #plt.xlabel(r'Wavelength ($\AA$)')
+    #plt.subplot(122)
+    #contxNew = np.arange(xcmin,xcmax,0.1)
+    #contyNew = contInterp(contxNew)
+    #plt.plot(contx, conty, 'o')
+    #plt.plot(contxNew, contyNew)
+    #plt.title('Interpolation for continuum filter')
+    #plt.ylabel('Transmission (%)')
+    #plt.xlabel(r'Wavelength ($\AA$)')
+    #plt.subplots_adjust(top = 0.7,bottom = 0.3,left = 0.10,hspace = 0.9,wspace = 0.5)
+    #plt.show()
+    #standxNew = np.arange(xmin,xmax,0.1)
+    #standyNew = standInterp(standxNew)
+    #plt.plot(standx, standy, 'o')
+    #plt.plot(standxNew, standyNew)
+    #plt.title('Interpolation for standard')
+    #plt.ylabel(r'Flux ($erg/s/cm^2/\AA$)')
+    #plt.xlabel(r'Wavelength ($\AA$)')
+    #plt.show()
 
-# Line filter integration
-lineInt = integral(lineInterp,xlmin,xlmax)
+    # Continuum filter integration
+    contInt = integral(contInterp,xcmin,xcmax)
 
-# Standard flux file integration
-standInt = integral(standInterp,xmin,xmax)
+    # Line filter integration
+    lineInt = integral(lineInterp,xlmin,xlmax)
 
-# Integration of continuum filter * standard flux
-auxContFunc = lambda x: contInterp(x) * standInterp(x)
-contFluxInt = integrate.quad(auxContFunc,xcmin,xcmax,epsabs=1.49e-11)
+    # Standard flux file integration
+    standInt = integral(standInterp,xmin,xmax)
 
-# Integration of line filter * standard flux
-auxLineFunc = lambda x: lineInterp(x) * standInterp(x)
-lineFluxInt = integrate.quad(auxLineFunc,xlmin,xlmax,epsabs=1.49e-11)
+    # Integration of continuum filter * standard flux
+    auxContFunc = lambda x: contInterp(x) * standInterp(x)
+    contFluxInt = integrate.quad(auxContFunc,xcmin,xcmax,epsabs=1.49e-11)
 
-# Q
-factorQ = 10 ** ( 0.4 * ( kpc * ( Xc - Xsc ) ) )
-Q = (factorQ / fsc) * contFluxInt[0] * (lineInt / contInt)
-print('Q =', Q)
+    # Integration of line filter * standard flux
+    auxLineFunc = lambda x: lineInterp(x) * standInterp(x)
+    lineFluxInt = integrate.quad(auxLineFunc,xlmin,xlmax,epsabs=1.49e-11)
 
-# P
-factorP = 10 ** ( 0.4 * ( kpl * ( Xl - Xsl ) ) )
-P = (factorP / fsl) * lineFluxInt[0]
-print('P =', P)
+    # Q
+    factorQ = 10 ** ( 0.4 * ( kpc * ( Xc - Xsc ) ) )
+    Q = (factorQ / fsc) * contFluxInt[0] * (lineInt / contInt)
+    print('Q =', Q)
 
-# R
-fwhm = 1
-g = fwhm / (2 * np.sqrt(np.log(2)))
-cte = 1 / ( np.sqrt( np.pi ) * g )
-funcR = lambda x: lineInterp(x) * np.exp(-(( x - obsWavelength(6563,vsys))/g )**2) * cte
-intR = integrate.quad(funcR,xlmin,xlmax)
-R = intR[0]
-print('R =', R,'\n')
+    # P
+    factorP = 10 ** ( 0.4 * ( kpl * ( Xl - Xsl ) ) )
+    P = (factorP / fsl) * lineFluxInt[0]
+    print('P =', P)
 
-alpha = P / ( R * texpl )
-beta = Q * texpl / ( P * texpc )
-gamma = -skyl + ( skyc * texpl * Q  / ( texpc * P ) )
+    # R
+    fwhm = 1.
+    g = fwhm / (2 * np.sqrt(np.log(2)))
+    cte = 1. / ( np.sqrt( np.pi ) * g )
+    waveobs = obsWavelength(6563., vsys)
+    funcR = lambda x: lineInterp(x) * np.exp(-(( x - waveobs )/g )**2)
+    intR = integrate.quad(funcR,xlmin,xlmax)
+    R = intR[0] * cte
+    print('R =', R,'\n')
 
-print('F = ', alpha, '(I(line) -', beta, 'I(continuum) +', gamma,')')
+    alpha = P / ( R * texpl )
+    beta = Q * texpl / ( P * texpc )
+    gamma = -skyl + ( skyc * texpl * Q  / ( texpc * P ) )
+
+    print('F = ', alpha, '(I(line) -', beta, 'I(continuum) +', gamma,')')
