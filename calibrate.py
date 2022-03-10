@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print('Sky background of the program frames in counts/pixel (continuum):', skyc)
 
     # Line file
-    path = '/Users/bmiller/src/calibrate'
+    path = '/Users/ziliotto/Documents/GitHub/calibrate_line'
     # path = '/Users/tuilaziliotto/Documents/GitHub/calibrate_line/''
     line = readfile(os.path.join(path, '6568.dat'))
     print('Line filter file:', line[5])
