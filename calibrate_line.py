@@ -9,6 +9,11 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy import integrate
 from scipy.interpolate import InterpolatedUnivariateSpline as interp
+from astropy.io import fits
+import time
+from astropy.visualization import astropy_mpl_style
+plt.style.use(astropy_mpl_style)
+from astropy.visualization import make_lupton_rgb
 
 def readfile(filename):
     ''' Reads a file.
@@ -35,6 +40,37 @@ def obsWavelength(x, vel):
     z = vel / c
     lambda_obs = x * (1 + z)
     return lambda_obs
+
+def blackbody(wavelength, T):
+    ''' Planck's law, which describes the electromagnetic radiation
+    emitted by a black body in thermal equilibrium at a given temperature T.
+    (Atomic units, and wavelength in Angstroms)
+    '''
+    h = 4.136e-15 # eV/s
+    kb = 8.617e-5 # eV/K
+    c = 2.99792458e18 # A/s
+    B = 2 * h * c**2 / (wavelength**5 * (np.exp(h*c / (wavelength*kb*T)) - 1))
+    return B
+
+def heatmap(u,g,i,w,x,y):
+    ''' Fits the Planck's law to each pixel of a given image.
+    Input: flux in u, g and i bands, with their effective wavelengths. Dimension of the image (x,y).
+    Output: array with the temperatures given by the fit.
+    '''
+    start = time.time()
+    f = np.empty(shape=(x,y), dtype=float)
+    for i in range(0,x):
+        for j in range(0,y):
+            fluxes = np.array([u_s[i][j], g_s[i][j], i_s[i][j]])
+            if (fluxes != 0).all():
+                popt, pcov = curve_fit(blackbody, wavelength, fluxes, bounds=(0,1e5))
+                T = popt
+            else:
+                T = 0
+            f[i][j] = T
+    end = time.time()
+    print(end - start,'s')
+    return f
 
 if __name__ == "__main__":
     # Data input
@@ -113,7 +149,7 @@ if __name__ == "__main__":
     standInterp = interp(standx,standy)
     contInterp = interp(contx,conty)
 
-    # Continuum function
+    # Continuum function (for the case of constant continuum. Use blackbody function in the variable case)
     def continuum():
         ''' Returns the flux of the continuum.
         '''
@@ -123,7 +159,7 @@ if __name__ == "__main__":
         return fc
 
     # A
-    funcA = lambda x: continuum() * lineInterp(x) # in this case, constant continuum
+    funcA = lambda x: continuum() * lineInterp(x)
     A = integrate.quad( funcA, xlmin, xlmax, epsabs=1.49e-11 )[0]
     print('A =', A)
 
@@ -150,3 +186,44 @@ if __name__ == "__main__":
 
     Fl = print('F(line) =', ( 1 / R ), '* (', A, '- ( (I(line) - ', skyl,') / (I(continuum) - ', skyc, ') ) * ( ',texpc*P/(texpl*Q), ') ) ')
     print(Fl)
+
+    u_image_file = fits.open('/Users/ziliotto/Downloads/stacks/ss_fornax_tile1_u_long_ALIGNi.003.fits')
+    g_image_file = fits.open('/Users/ziliotto/Downloads/stacks/ss_fornax_tile1_g_long_ALIGNi.003.fits')
+    #r_image_file = fits.open('/Users/ziliotto/Downloads/stacks/')
+    i_image_file = fits.open('/Users/ziliotto/Downloads/stacks/ss_fornax_tile1_i_long.003.fits')
+
+    u_gain = u_image_file['PRIMARY'].header['GAIN']
+    g_gain = g_image_file['PRIMARY'].header['GAIN']
+    i_gain = i_image_file['PRIMARY'].header['GAIN']
+
+    u_image_data = fits.getdata('/Users/ziliotto/Downloads/stacks/ss_fornax_tile1_u_long_ALIGNi.003.fits', ext=0)
+    g_image_data = fits.getdata('/Users/ziliotto/Downloads/stacks/ss_fornax_tile1_g_long_ALIGNi.003.fits', ext=0)
+    i_image_data = fits.getdata('/Users/ziliotto/Downloads/stacks/ss_fornax_tile1_i_long.003.fits', ext=0)
+
+    flux_u = u_image_data / u_gain
+    flux_g = g_image_data / g_gain
+    flux_i = i_image_data / i_gain
+
+    # Effective wavelengths for u, g, i bands (Angstrom)
+    # Available here: http://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=CTIO&gname2=DECam&asttype=
+    u_w = 3580.78
+    g_w = 4773.99
+    r_w = 6444.80
+    i_w = 7858.77
+
+    wavelength = np.array([u_w,g_w,i_w])
+
+    # Example for an individual galaxy (time of execution ~170s)
+    u_s = flux_u[12220:12380,8840:9000]
+    g_s = flux_g[12220:12380,8840:9000]
+    i_s = flux_i[12220:12380,8840:9000]
+    #print(u_s.shape)
+
+    #image = make_lupton_rgb(i_s, g_s, u_s, Q=10, stretch=0.5)
+    #plt.grid(None)
+    #plt.imshow(image)
+    f = heatmap(u_s,g_s,i_s,wavelength,u_s.shape[0],u_s.shape[1])
+    plt.imshow(f,cmap='gray')
+    plt.grid(None)
+    plt.colorbar(label='Temperature (K)')
+    plt.show()
